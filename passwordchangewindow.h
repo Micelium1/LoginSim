@@ -19,6 +19,7 @@ public:
 
 private:
     QString name;
+    UserToJson userList;
     Ui::PasswordChangeWindow *ui;
 };
 

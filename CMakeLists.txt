@@ -30,6 +30,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         userlist.h userlist.cpp userlist.ui
         usertojson.h usertojson.cpp
         passwordchangewindow.h passwordchangewindow.cpp passwordchangewindow.ui
+        intposdelegate.h intposdelegate.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

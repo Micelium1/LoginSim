@@ -11,15 +11,20 @@ struct User {
     const static QString blocked;
     const static QString limited;
 };
+enum PasswordChangeCodes {
+    Okay = 0,
+    WrongPassword = 1,
+    ViolatedLimitations = 2
+};
 class UserToJson
 {
 public:
     UserToJson(QString filename);
-    void addNewUser(QString name,bool blocked,bool limited);
-    void modifyUser(QString name,bool blocked,bool limited);
+    void addNewUser(QString name, bool blocked, int limited);
+    void modifyUser(QString name,bool blocked,int limited);
     void removeUser(QString name);
     int indexFind(QString name) const;
-    bool changePassword(QString name, QString old_passwd, QString new_passwd);
+    PasswordChangeCodes changePassword(QString name, QString old_passwd, QString new_passwd);
     std::optional<QJsonValueRef> find(QString name);
     void save_changes();
     QSharedPointer<QJsonArray> getJsonArray() const;

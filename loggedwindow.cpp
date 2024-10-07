@@ -26,9 +26,9 @@ void LoggedWindow::on_userListButton_press()
 }
 void LoggedWindow::closeEvent(QCloseEvent *event) {
     if (parentWindow) {
-        parentWindow->show();  // Показываем исходное окно
+        parentWindow->show();
     }
-    QMainWindow::closeEvent(event);  // Вызываем стандартное событие закрытия
+    QMainWindow::closeEvent(event);
 }
 
 void LoggedWindow::on_changePasswordButton_press(QString name)

@@ -26,7 +26,7 @@ UserToJson::UserToJson(QString filename) {
 
         if (fileData.isEmpty()) {
             JsonFile.close();
-            addNewUser("admin",false,true);
+            addNewUser("admin",false,0);
             if (JsonFile.open(QFile::WriteOnly)) {
                 QJsonDocument jsonDoc(JsonArray);
                 JsonFile.write(jsonDoc.toJson());
@@ -47,7 +47,7 @@ UserToJson::UserToJson(QString filename) {
 
 }
 
-void UserToJson::addNewUser(QString name, bool blocked, bool limited)
+void UserToJson::addNewUser(QString name, bool blocked, int limited)
 {
     QJsonObject object;
     object[User::name] = name;
@@ -57,7 +57,7 @@ void UserToJson::addNewUser(QString name, bool blocked, bool limited)
     JsonArray.append(object);
 }
 
-void UserToJson::modifyUser(QString name, bool blocked, bool limited)
+void UserToJson::modifyUser(QString name, bool blocked, int limited)
 {
     for (QJsonValueRef object:(JsonArray))
     {
@@ -87,18 +87,24 @@ int UserToJson::indexFind(QString name) const  {
     return -1;
 }
 
-bool UserToJson::changePassword(QString name, QString old_passwd, QString new_passwd)
+
+
+PasswordChangeCodes UserToJson::changePassword(QString name, QString old_passwd, QString new_passwd)
 {
     std::optional<QJsonValueRef> user = find(name);
     QJsonValueRef ref = user.value();
-    if (ref.toObject()[User::passwd] == old_passwd) {
-        QJsonObject obj = ref.toObject();
-        obj[User::passwd] = new_passwd;
-        ref = QJsonValue(obj);
-        return true;
+    if (!(ref.toObject()[User::passwd] == old_passwd)) {
+        return WrongPassword;
     }
-    return false;
 
+
+    QJsonObject obj = ref.toObject();
+    if (obj[User::limited].toInt() > new_passwd.size()) return ViolatedLimitations;
+
+    obj[User::passwd] = new_passwd;
+    ref = QJsonValue(obj);
+
+    return Okay;
 }
 
 std::optional<QJsonValueRef> UserToJson::find(QString name)
