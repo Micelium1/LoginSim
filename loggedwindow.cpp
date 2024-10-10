@@ -3,10 +3,11 @@
 #include "passwordchangewindow.h"
 #include "userlist.h"
 
-LoggedWindow::LoggedWindow(QString name, QWidget *parent)
+LoggedWindow::LoggedWindow(QString name,QSharedPointer<UserToJson> _userList, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::LoggedWindow)
     , parentWindow(parent)
+    , userList(_userList)
 {
     ui->setupUi(this);
 
@@ -21,7 +22,8 @@ LoggedWindow::LoggedWindow(QString name, QWidget *parent)
 
 void LoggedWindow::on_userListButton_press()
 {
-    UserList* wind = new UserList;
+
+    UserList* wind = new UserList(userList,this);
     wind->exec();
 }
 void LoggedWindow::closeEvent(QCloseEvent *event) {
@@ -33,7 +35,7 @@ void LoggedWindow::closeEvent(QCloseEvent *event) {
 
 void LoggedWindow::on_changePasswordButton_press(QString name)
 {
-    PasswordChangeWindow* wind = new PasswordChangeWindow(name);
+    PasswordChangeWindow* wind = new PasswordChangeWindow(name,userList,this);
     wind->exec();
 }
 

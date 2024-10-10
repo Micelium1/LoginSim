@@ -13,13 +13,13 @@ class PasswordChangeWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit PasswordChangeWindow(QString _name,QWidget *parent = nullptr);
+    explicit PasswordChangeWindow(QString _name, QSharedPointer<UserToJson> _userList, QWidget *parent = nullptr);
     void on_applyButton_press();
     ~PasswordChangeWindow();
 
 private:
     QString name;
-    UserToJson userList;
+    QSharedPointer<UserToJson> userList;
     Ui::PasswordChangeWindow *ui;
 };
 

@@ -18,20 +18,25 @@ MainWindow::MainWindow(QSharedPointer<UserToJson> userList, QWidget *parent)
 
 void MainWindow::on_EnterButton_press(QSharedPointer<UserToJson> userList)
 {
-    auto userInfo = userList->find(ui->loginEdit->text());
-    if (!userInfo.has_value()) {
+    QJsonObject userInfo = userList->getUser(ui->loginEdit->text());
+    if (userInfo.empty()) {
         ui->passwordEdit->setText("");
         ui->wrongPasswdLabel->show();
         return;
     }
-    if (!(userInfo->toObject()[User::passwd] == ui->passwordEdit->text())) {
-        ui->loginEdit->setText("");
+    if (!(userInfo[User::passwd] == ui->passwordEdit->text())) {
         ui->passwordEdit->setText("");
+        ui->wrongPasswdLabel->setText("Неверное имя пользователя или пароль");
         ui->wrongPasswdLabel->show();
         return;
     }
+    // if (!(userInfo[User::blocked].toBool())) {
+    //     ui->wrongPasswdLabel->setText("Пользователь заблокирован");
+    //     ui->wrongPasswdLabel->show();
+    //     return;
+    // }
     this->hide();
-    LoggedWindow* w = new LoggedWindow(userInfo->toObject()[User::name].toString(),this);
+    LoggedWindow* w = new LoggedWindow(ui->loginEdit->text(),userList,this);
     w->show();
 }
 

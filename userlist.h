@@ -13,14 +13,14 @@ class UserList : public QDialog
     Q_OBJECT
 
 public:
-    explicit UserList(QWidget *parent = nullptr);
+    explicit UserList(QSharedPointer<UserToJson> _userList, QWidget *parent = nullptr);
     void on_addButton_press();
     void on_deleteButton_press();
     void on_saveButton_press();
     ~UserList();
 
 private:
-    UserToJson userList;
+    QSharedPointer<UserToJson> userList;
     Ui::UserList *ui;
 };
 

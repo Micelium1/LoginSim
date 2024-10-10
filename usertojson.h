@@ -23,15 +23,14 @@ public:
     void addNewUser(QString name, bool blocked, int limited);
     void modifyUser(QString name,bool blocked,int limited);
     void removeUser(QString name);
-    int indexFind(QString name) const;
+    QJsonObject getUser(QString name);
     PasswordChangeCodes changePassword(QString name, QString old_passwd, QString new_passwd);
-    std::optional<QJsonValueRef> find(QString name);
     void save_changes();
     QSharedPointer<QJsonArray> getJsonArray() const;
 
 private:
     QFile JsonFile;
-    QJsonArray JsonArray;
+    QJsonObject JsonArray;
 };
 
 #endif // USERTOJSON_H

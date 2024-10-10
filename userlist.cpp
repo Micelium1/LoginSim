@@ -21,15 +21,15 @@ void addCheckBoxToTable(QTableWidget* table, int row, int column,bool checked = 
     table->setCellWidget(row, column, container);
 }
 
-UserList::UserList(QWidget *parent)
+UserList::UserList(QSharedPointer<UserToJson> _userList,QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::UserList)
-    , userList(filename)
+    , userList(_userList)
 {
 
     ui->setupUi(this);
 
-    QSharedPointer<QJsonArray> userTable = userList.getJsonArray();
+    QSharedPointer<QJsonArray> userTable = userList->getJsonArray();
     int table_iter = 0;
     for (auto iter_ref:*userTable) {
         ui->UserListTable->insertRow(ui->UserListTable->rowCount());
@@ -81,7 +81,7 @@ void UserList::on_deleteButton_press()
                 if (begin == 0) {
                     break;
                 }
-                userList.removeUser(ui->UserListTable->item(begin,0)->text());
+                userList->removeUser(ui->UserListTable->item(begin,0)->text());
                 ui->UserListTable->removeRow(begin);
 
         }
@@ -124,9 +124,9 @@ void UserList::on_saveButton_press()
             limit = "0";
         }
 
-        userList.modifyUser(name,blockChecked,limit.toInt());
+        userList->modifyUser(name,blockChecked,limit.toInt());
     }
-    userList.save_changes();
+    userList->save_changes();
     close();
 }
 

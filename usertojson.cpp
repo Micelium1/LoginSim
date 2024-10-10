@@ -12,7 +12,7 @@ UserToJson::UserToJson(QString filename) {
     JsonFile.setFileName(filename);
 
     if (!JsonFile.exists()) {
-        addNewUser("admin",false,true);
+        addNewUser("admin",false,0);
         if (JsonFile.open(QFile::WriteOnly)) {
             JsonFile.write(QJsonDocument(JsonArray).toJson());
             JsonFile.close();
@@ -37,8 +37,10 @@ UserToJson::UserToJson(QString filename) {
             }
             return;
         }
-
-        JsonArray = QJsonDocument::fromJson(fileData).array();
+        QJsonParseError err;
+        QJsonDocument doc = QJsonDocument::fromJson(fileData,&err);
+        if (err.error) throw std::runtime_error(err.errorString().toStdString());
+        JsonArray = doc.object();
 
     } else {
         qDebug() << "Не удалось открыть файл для чтения.";
@@ -49,73 +51,61 @@ UserToJson::UserToJson(QString filename) {
 
 void UserToJson::addNewUser(QString name, bool blocked, int limited)
 {
-    QJsonObject object;
-    object[User::name] = name;
-    object[User::passwd] = "";
-    object[User::blocked] = blocked;
-    object[User::limited] = limited;
-    JsonArray.append(object);
+    QJsonObject user;
+    user[User::passwd] = "";
+    user[User::blocked] = blocked;
+    user[User::limited] = limited;
+    JsonArray[name] = user;
 }
 
 void UserToJson::modifyUser(QString name, bool blocked, int limited)
 {
-    for (QJsonValueRef object:(JsonArray))
-    {
-        if (object.toObject()[User::name] == name) {
-            QJsonObject obj = object.toObject();
 
-            obj[User::blocked] = blocked;
-            obj[User::limited] = limited;
-
-            object = QJsonValue(obj);
-            return;
-        }
-
+    QJsonObject user = JsonArray[name].toObject();
+    if (user.empty()) {
+        addNewUser(name,blocked,limited);
+        return;
     }
-    addNewUser(name,blocked,limited);
+    user[User::blocked] = blocked;
+    user[User::limited] = limited;
+    JsonArray[name] = user;
+
 }
 
 void UserToJson::removeUser(QString name)
 {
-    JsonArray.removeAt(indexFind(name));
+    JsonArray.remove(name);
 }
 
-int UserToJson::indexFind(QString name) const  {
-    for (int i = 0; i < JsonArray.size();++i) {
-        if (JsonArray[i][User::name] == name) return i;
-    }
-    return -1;
+QJsonObject UserToJson::getUser(QString name)
+{
+    QJsonObject user = JsonArray[name].toObject();
+    user[User::name] = name;
+    return user;
 }
+
+
 
 
 
 PasswordChangeCodes UserToJson::changePassword(QString name, QString old_passwd, QString new_passwd)
 {
-    std::optional<QJsonValueRef> user = find(name);
-    QJsonValueRef ref = user.value();
-    if (!(ref.toObject()[User::passwd] == old_passwd)) {
+    if (!JsonArray.contains(name)) return PasswordChangeCodes::WrongPassword;
+    QJsonObject user = JsonArray[name].toObject();
+    if (!(user[User::passwd] == old_passwd)) {
         return WrongPassword;
     }
 
 
-    QJsonObject obj = ref.toObject();
-    if (obj[User::limited].toInt() > new_passwd.size()) return ViolatedLimitations;
+    if (user[User::limited].toInt() > new_passwd.size()) return ViolatedLimitations;
 
-    obj[User::passwd] = new_passwd;
-    ref = QJsonValue(obj);
+    user[User::passwd] = new_passwd;
+    JsonArray[name] = user;
 
     return Okay;
 }
 
-std::optional<QJsonValueRef> UserToJson::find(QString name)
-{
-    for (QJsonValueRef iter_ref:JsonArray) {
-        if (iter_ref.toObject()[User::name] == name) {
-            return iter_ref;
-        }
-    }
-    return std::nullopt;
-}
+
 void UserToJson::save_changes() {
     JsonFile.open(QFile::WriteOnly);
     JsonFile.write(QJsonDocument(JsonArray).toJson());
@@ -125,9 +115,11 @@ void UserToJson::save_changes() {
 QSharedPointer<QJsonArray> UserToJson::getJsonArray() const
 {
     QSharedPointer<QJsonArray> protectedArray(new QJsonArray());
-    for (QJsonValueConstRef iter_ref:JsonArray) {
-        QJsonObject protectedJsonObject = iter_ref.toObject();
+
+    for (const QString& iter_ref:JsonArray.keys()) {
+        QJsonObject protectedJsonObject = JsonArray[iter_ref].toObject();
         protectedJsonObject.remove(User::passwd);
+        protectedJsonObject[User::name] = iter_ref;
         protectedArray->append(protectedJsonObject);
 
     }
