@@ -12,6 +12,7 @@ public:
     explicit LoggedWindow(QString name, QSharedPointer<UserToJson> _userList, QWidget *parent = nullptr);
     void on_userListButton_press();
     void on_changePasswordButton_press(QString name);
+    void on_infoAction_triger();
 private:
     Ui::LoggedWindow *ui;
     QWidget* parentWindow;

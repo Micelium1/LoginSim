@@ -2,10 +2,7 @@
 
 QString filename = "userdata.json";
 
-const QString User::name = "Username";
-const QString User::passwd = "Password";
-const QString User::blocked = "Blocked";
-const QString User::limited = "Limited";
+
 
 UserToJson::UserToJson(QString filename) {
 
@@ -79,8 +76,12 @@ void UserToJson::removeUser(QString name)
 
 QJsonObject UserToJson::getUser(QString name)
 {
-    QJsonObject user = JsonArray[name].toObject();
-    user[User::name] = name;
+    auto user_where = JsonArray.find(name);
+    QJsonObject user;
+    if (user_where->isObject()) {
+        user = user_where->toObject();
+        user[User::name] = name;
+    }
     return user;
 }
 

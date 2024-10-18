@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "loggedwindow.h"
+#include "passwordchangewindow.h"
 
 MainWindow::MainWindow(QSharedPointer<UserToJson> userList, QWidget *parent)
     : QMainWindow(parent)
@@ -18,23 +19,35 @@ MainWindow::MainWindow(QSharedPointer<UserToJson> userList, QWidget *parent)
 
 void MainWindow::on_EnterButton_press(QSharedPointer<UserToJson> userList)
 {
+    static int atemptsCounter = 0;
     QJsonObject userInfo = userList->getUser(ui->loginEdit->text());
     if (userInfo.empty()) {
         ui->passwordEdit->setText("");
         ui->wrongPasswdLabel->show();
+        ++atemptsCounter;
+        if (atemptsCounter >= 3) this->close();
         return;
     }
     if (!(userInfo[User::passwd] == ui->passwordEdit->text())) {
         ui->passwordEdit->setText("");
         ui->wrongPasswdLabel->setText("Неверное имя пользователя или пароль");
         ui->wrongPasswdLabel->show();
+        ++atemptsCounter;
+        if (atemptsCounter >= 3) this->close();
         return;
     }
-    // if (!(userInfo[User::blocked].toBool())) {
-    //     ui->wrongPasswdLabel->setText("Пользователь заблокирован");
-    //     ui->wrongPasswdLabel->show();
-    //     return;
-    // }
+    if (userInfo[User::blocked].toBool()) {
+         ui->wrongPasswdLabel->setText("Пользователь заблокирован");
+         ui->wrongPasswdLabel->show();
+         return;
+    }
+    if (userInfo[User::passwd] == "" or userInfo[User::passwd].toString().size() < userInfo[User::limited].toInt()) {
+         PasswordChangeWindow* wind = new PasswordChangeWindow(ui->loginEdit->text(),userList,this);
+         this->hide();
+         wind->exec();
+         this->show();
+         return;
+    }
     this->hide();
     LoggedWindow* w = new LoggedWindow(ui->loginEdit->text(),userList,this);
     w->show();

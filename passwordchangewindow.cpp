@@ -17,6 +17,14 @@ PasswordChangeWindow::PasswordChangeWindow(QString _name,QSharedPointer<UserToJs
 void PasswordChangeWindow::on_applyButton_press()
 {
 
+    if(ui->newPasswdInput->text() != ui->RepeatPasswdInput->text())
+    {
+        ui->changeStatus->setText("Пароль и повтор пароля не совпадают");
+        QPalette pal = ui->changeStatus->palette();
+        pal.setColor(QPalette::WindowText,Qt::red);
+        ui->changeStatus->setPalette(pal);
+        return;
+    }
 
     PasswordChangeCodes isSuccesfull = userList->changePassword(name,ui->oldPasswdInput->text(),ui->newPasswdInput->text());
 

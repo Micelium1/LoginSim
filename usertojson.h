@@ -4,12 +4,12 @@
 
 extern QString filename;//по заданию нужно было сохранять всё в файл на машине симулирующий базу, думаю глобальная переменная всё же лучше как идея чем прописывать название файла ручками каждый раз
 
-struct User {
-    // Объявление статических переменных
-    const static QString name;
-    const static QString passwd;
-    const static QString blocked;
-    const static QString limited;
+namespace User {
+
+    const QString name = "Username";
+    const QString passwd = "Password";
+    const QString blocked = "Blocked";
+    const QString limited = "Limited";
 };
 enum PasswordChangeCodes {
     Okay = 0,
