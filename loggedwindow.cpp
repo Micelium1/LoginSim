@@ -39,6 +39,7 @@ void LoggedWindow::on_changePasswordButton_press(QString name)
 {
     PasswordChangeWindow* wind = new PasswordChangeWindow(name,userList,this);
     wind->exec();
+    this->close();
 }
 
 void LoggedWindow::on_infoAction_triger()

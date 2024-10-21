@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "usertojson.h"
-
+#include "encryptorpassdialog.h"
 
 #include <QApplication>
 #include <QLocale>
@@ -21,9 +21,15 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    QString keyPass;
 
+    {
+        EncryptorPassDialog dial;
+        dial.exec();
+        keyPass = dial.getKeyPass();
+    }
 
-    QSharedPointer<UserToJson> userList = QSharedPointer<UserToJson>(new UserToJson(filename));
+    QSharedPointer<UserToJson> userList = QSharedPointer<UserToJson>(new UserToJson(filename,keyPass));
     MainWindow w(userList);
     w.show();
     return a.exec();

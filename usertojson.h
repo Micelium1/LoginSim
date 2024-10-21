@@ -1,6 +1,7 @@
 #ifndef USERTOJSON_H
 #define USERTOJSON_H
 #include <QtCore>
+#include "cryptofile.h"
 
 extern QString filename;//по заданию нужно было сохранять всё в файл на машине симулирующий базу, думаю глобальная переменная всё же лучше как идея чем прописывать название файла ручками каждый раз
 
@@ -19,7 +20,7 @@ enum PasswordChangeCodes {
 class UserToJson
 {
 public:
-    UserToJson(QString filename);
+    UserToJson(QString filename, QString passKey);
     void addNewUser(QString name, bool blocked, int limited);
     void modifyUser(QString name,bool blocked,int limited);
     void removeUser(QString name);
@@ -27,10 +28,12 @@ public:
     PasswordChangeCodes changePassword(QString name, QString old_passwd, QString new_passwd);
     void save_changes();
     QSharedPointer<QJsonArray> getJsonArray() const;
-
+    ~UserToJson();
 private:
     QFile JsonFile;
     QJsonObject JsonArray;
+    CryptoFile Crypt;
+    QString m_passKey;
 };
 
 #endif // USERTOJSON_H

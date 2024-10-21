@@ -1,14 +1,17 @@
 #include "usertojson.h"
-
+#include <QFileDialog>
 QString filename = "userdata.json";
 
 
 
-UserToJson::UserToJson(QString filename) {
+UserToJson::UserToJson(QString filename,QString passKey)
+    : m_passKey(passKey)
+{
 
+    QString encFilename = QFileDialog::getOpenFileName(nullptr,"Decryption file","userdata.enc","(*.enc)");
     JsonFile.setFileName(filename);
-
-    if (!JsonFile.exists()) {
+    if (!Crypt.decryptFile(encFilename,filename,passKey))
+    {
         addNewUser("admin",false,0);
         if (JsonFile.open(QFile::WriteOnly)) {
             JsonFile.write(QJsonDocument(JsonArray).toJson());
@@ -16,6 +19,7 @@ UserToJson::UserToJson(QString filename) {
         }
         return;
     }
+
     if (JsonFile.open(QFile::ReadOnly)) {
 
         QByteArray fileData = JsonFile.readAll();
@@ -125,6 +129,13 @@ QSharedPointer<QJsonArray> UserToJson::getJsonArray() const
 
     }
     return protectedArray;
+}
+
+UserToJson::~UserToJson()
+{
+    QString encFilename = QFileDialog::getSaveFileName(nullptr,"Decryption file","userdata.enc","(*.enc)");
+    Crypt.encryptFile(filename,encFilename,m_passKey);
+    JsonFile.remove();
 }
 
 

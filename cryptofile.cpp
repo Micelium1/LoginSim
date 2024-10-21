@@ -1,5 +1,4 @@
 #include "cryptofile.h"
-
 CryptoFile::CryptoFile() {}
 
 bool CryptoFile::encryptFile(const QString &inputFilePath, const QString &outputFilePath, const QString &password)
@@ -8,53 +7,59 @@ bool CryptoFile::encryptFile(const QString &inputFilePath, const QString &output
     HCRYPTKEY hKey = 0;
     HCRYPTHASH hHash = 0;
 
-    // 1. Инициализация криптографического провайдера
     if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, 0)) {
         if (GetLastError() == NTE_BAD_KEYSET) {
             if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET)) {
-                qCritical() << "Error during CryptAcquireContext!";
+                qCritical() << "Error during CryptAcquireContext!" << GetLastError();
                 return false;
             }
         } else {
-            qCritical() << "Error during CryptAcquireContext!";
+            qCritical() << "Error during CryptAcquireContext!" << GetLastError();
             return false;
         }
     }
 
-    // 2. Создание хэш-объекта с использованием MD2
     if (!CryptCreateHash(hProv, CALG_MD2, 0, 0, &hHash)) {
-        qCritical() << "Error during CryptCreateHash!";
+        qCritical() << "Error during CryptCreateHash!" << GetLastError();
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 3. Хэширование парольной фразы
     if (!CryptHashData(hHash, reinterpret_cast<const BYTE*>(password.toUtf8().constData()), password.size(), 0)) {
-        qCritical() << "Error during CryptHashData!";
+        qCritical() << "Error during CryptHashData!" << GetLastError();
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 4. Генерация ключа с добавлением случайного значения (соли)
-    if (!CryptDeriveKey(hProv, CALG_AES_256, hHash, CRYPT_EXPORTABLE | CRYPT_CREATE_SALT, &hKey)) {
-        qCritical() << "Error during CryptDeriveKey!";
+    if (!CryptDeriveKey(hProv, CALG_RC2, hHash, CRYPT_EXPORTABLE | CRYPT_CREATE_SALT, &hKey)) {
+        DWORD dw = GetLastError();
+
+        qCritical() << "Error during CryptDeriveKey!" ;
+        if (dw == ERROR_INVALID_HANDLE) qCritical() << "ERROR_INVALID_HANDLE";
+        if (dw == ERROR_INVALID_PARAMETER) qCritical() << "ERROR_INVALID_PARAMETER";
+        if (dw == NTE_BAD_ALGID) qCritical() << "NTE_BAD_ALGID";
+        if (dw == NTE_BAD_FLAGS) qCritical() << "NTE_BAD_FLAGS";
+        if (dw == NTE_BAD_HASH) qCritical() << "NTE_BAD_HASH";
+        if (dw == NTE_BAD_HASH_STATE) qCritical() << "NTE_BAD_HASH_STATE";
+        if (dw == NTE_BAD_UID) qCritical() << "NTE_BAD_UID";
+        if (dw == NTE_FAIL) qCritical() << "NTE_FAIL";
+        if (dw == NTE_SILENT_CONTEXT) qCritical() << "NTE_SILENT_CONTEXT";
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 5. Установка режима шифрования (ECB)
     DWORD mode = CRYPT_MODE_ECB;
     if (!CryptSetKeyParam(hKey, KP_MODE, reinterpret_cast<BYTE*>(&mode), 0)) {
-        qCritical() << "Error during CryptSetKeyParam!";
+        qCritical() << "Error during CryptSetKeyParam!" << GetLastError();
         CryptDestroyKey(hKey);
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 6. Чтение исходного файла
+
     QFile inputFile(inputFilePath);
     if (!inputFile.open(QIODevice::ReadOnly)) {
         qCritical() << "Error opening input file!";
@@ -63,25 +68,24 @@ bool CryptoFile::encryptFile(const QString &inputFilePath, const QString &output
         CryptReleaseContext(hProv, 0);
         return false;
     }
-
     QByteArray fileData = inputFile.readAll();
     inputFile.close();
 
-    // 7. Шифрование данных
+
     DWORD dataLen = fileData.size();
-    DWORD bufLen = dataLen + 16; // Для блочного шифрования буфер должен быть больше
-    QVector<BYTE> encryptedData(bufLen);
+    DWORD bufLen = dataLen + 16;
+    QByteArray encryptedData(bufLen, 0);
     memcpy(encryptedData.data(), fileData.data(), dataLen);
 
-    if (!CryptEncrypt(hKey, 0, TRUE, 0, encryptedData.data(), &dataLen, bufLen)) {
-        qCritical() << "Error during CryptEncrypt!";
+    if (!CryptEncrypt(hKey, 0, TRUE, 0, reinterpret_cast<BYTE*>(encryptedData.data()), &dataLen, bufLen)) {
+        qCritical() << "Error during CryptEncrypt!" << GetLastError();
         CryptDestroyKey(hKey);
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 8. Запись зашифрованных данных в файл
+
     QFile outputFile(outputFilePath);
     if (!outputFile.open(QIODevice::WriteOnly)) {
         qCritical() << "Error opening output file!";
@@ -90,10 +94,10 @@ bool CryptoFile::encryptFile(const QString &inputFilePath, const QString &output
         CryptReleaseContext(hProv, 0);
         return false;
     }
-    outputFile.write(reinterpret_cast<const char*>(encryptedData.data()), dataLen);
+    outputFile.write(encryptedData.left(dataLen));
     outputFile.close();
 
-    // 9. Очистка ресурсов
+
     CryptDestroyKey(hKey);
     CryptDestroyHash(hHash);
     CryptReleaseContext(hProv, 0);
@@ -107,53 +111,64 @@ bool CryptoFile::decryptFile(const QString &inputFilePath, const QString &output
     HCRYPTKEY hKey = 0;
     HCRYPTHASH hHash = 0;
 
-    // 1. Инициализация криптографического провайдера
+
     if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, 0)) {
         if (GetLastError() == NTE_BAD_KEYSET) {
             if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET)) {
-                qCritical() << "Error during CryptAcquireContext!";
+                qCritical() << "Error during CryptAcquireContext!" << GetLastError();
                 return false;
             }
         } else {
-            qCritical() << "Error during CryptAcquireContext!";
+            qCritical() << "Error during CryptAcquireContext!" << GetLastError();
             return false;
         }
     }
 
-    // 2. Создание хэш-объекта с использованием MD2
+
     if (!CryptCreateHash(hProv, CALG_MD2, 0, 0, &hHash)) {
-        qCritical() << "Error during CryptCreateHash!";
+        qCritical() << "Error during CryptCreateHash!" << GetLastError();
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 3. Хэширование парольной фразы
+
     if (!CryptHashData(hHash, reinterpret_cast<const BYTE*>(password.toUtf8().constData()), password.size(), 0)) {
-        qCritical() << "Error during CryptHashData!";
+        qCritical() << "Error during CryptHashData!" << GetLastError();
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 4. Генерация ключа с добавлением случайного значения (соли)
-    if (!CryptDeriveKey(hProv, CALG_AES_256, hHash, CRYPT_EXPORTABLE, &hKey)) {
+
+    if (!CryptDeriveKey(hProv, CALG_RC2, hHash, CRYPT_EXPORTABLE | CRYPT_CREATE_SALT, &hKey)) {
+        DWORD dw = GetLastError();
+
         qCritical() << "Error during CryptDeriveKey!";
+        if (dw == ERROR_INVALID_HANDLE) qCritical() << "ERROR_INVALID_HANDLE";
+        if (dw == ERROR_INVALID_PARAMETER) qCritical() << "ERROR_INVALID_PARAMETER";
+        if (dw == NTE_BAD_ALGID) qCritical() << "NTE_BAD_ALGID";
+        if (dw == NTE_BAD_FLAGS) qCritical() << "NTE_BAD_FLAGS";
+        if (dw == NTE_BAD_HASH) qCritical() << "NTE_BAD_HASH";
+        if (dw == NTE_BAD_HASH_STATE) qCritical() << "NTE_BAD_HASH_STATE";
+        if (dw == NTE_BAD_UID) qCritical() << "NTE_BAD_UID";
+        if (dw == NTE_FAIL) qCritical() << "NTE_FAIL";
+        if (dw == NTE_SILENT_CONTEXT) qCritical() << "NTE_SILENT_CONTEXT";
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 5. Установка режима расшифровки (ECB)
+
     DWORD mode = CRYPT_MODE_ECB;
     if (!CryptSetKeyParam(hKey, KP_MODE, reinterpret_cast<BYTE*>(&mode), 0)) {
-        qCritical() << "Error during CryptSetKeyParam!";
+        qCritical() << "Error during CryptSetKeyParam!" << GetLastError();
         CryptDestroyKey(hKey);
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 6. Чтение зашифрованного файла
+
     QFile inputFile(inputFilePath);
     if (!inputFile.open(QIODevice::ReadOnly)) {
         qCritical() << "Error opening input file!";
@@ -162,21 +177,23 @@ bool CryptoFile::decryptFile(const QString &inputFilePath, const QString &output
         CryptReleaseContext(hProv, 0);
         return false;
     }
-
     QByteArray encryptedData = inputFile.readAll();
     inputFile.close();
 
-    // 7. Расшифровка данных
+
     DWORD dataLen = encryptedData.size();
-    if (!CryptDecrypt(hKey, 0, TRUE, 0, reinterpret_cast<BYTE*>(encryptedData.data()), &dataLen)) {
-        qCritical() << "Error during CryptDecrypt!";
+    QByteArray decryptedData(dataLen, 0);
+    memcpy(decryptedData.data(), encryptedData.data(), dataLen);
+
+    if (!CryptDecrypt(hKey, 0, TRUE, 0, reinterpret_cast<BYTE*>(decryptedData.data()), &dataLen)) {
+        qCritical() << "Error during CryptDecrypt!" << GetLastError();
         CryptDestroyKey(hKey);
         CryptDestroyHash(hHash);
         CryptReleaseContext(hProv, 0);
         return false;
     }
 
-    // 8. Запись расшифрованных данных в файл
+
     QFile outputFile(outputFilePath);
     if (!outputFile.open(QIODevice::WriteOnly)) {
         qCritical() << "Error opening output file!";
@@ -185,10 +202,10 @@ bool CryptoFile::decryptFile(const QString &inputFilePath, const QString &output
         CryptReleaseContext(hProv, 0);
         return false;
     }
-    outputFile.write(encryptedData.left(dataLen));
+    outputFile.write(decryptedData.left(dataLen));
     outputFile.close();
 
-    // 9. Очистка ресурсов
+
     CryptDestroyKey(hKey);
     CryptDestroyHash(hHash);
     CryptReleaseContext(hProv, 0);

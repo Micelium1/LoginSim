@@ -41,6 +41,8 @@ void MainWindow::on_EnterButton_press(QSharedPointer<UserToJson> userList)
          ui->wrongPasswdLabel->show();
          return;
     }
+
+    ui->passwordEdit->setText("");
     if (userInfo[User::passwd] == "" or userInfo[User::passwd].toString().size() < userInfo[User::limited].toInt()) {
          PasswordChangeWindow* wind = new PasswordChangeWindow(ui->loginEdit->text(),userList,this);
          this->hide();
@@ -48,6 +50,8 @@ void MainWindow::on_EnterButton_press(QSharedPointer<UserToJson> userList)
          this->show();
          return;
     }
+    ui->wrongPasswdLabel->setText("");
+
     atemptsCounter = 0;
     this->hide();
     LoggedWindow* w = new LoggedWindow(ui->loginEdit->text(),userList,this);

@@ -33,6 +33,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         intposdelegate.h intposdelegate.cpp
         infowindow.h infowindow.cpp infowindow.ui
         cryptofile.h cryptofile.cpp
+        encryptorpassdialog.h encryptorpassdialog.cpp encryptorpassdialog.ui
 
     )
 # Define target properties for Android with Qt 6 as:
