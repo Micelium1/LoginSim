@@ -1,9 +1,0 @@
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/RegistrationAndLogin.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/edit_cache.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/rebuild_cache.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/list_install_components.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/install.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/install/local.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/install/strip.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/RegistrationAndLogin_autogen_timestamp_deps.dir
-D:/Qt creations/RegistrationAndLogin/build/CMakeFiles/RegistrationAndLogin_autogen.dir
