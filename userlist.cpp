@@ -120,7 +120,6 @@ void UserList::on_saveButton_press()
         if (item_limit) {
             limit = item_limit->text();
         } else {
-            qDebug() << "Error: Item is nullptr! Returning an empty string.";
             limit = "0";
         }
 

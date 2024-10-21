@@ -48,6 +48,7 @@ void MainWindow::on_EnterButton_press(QSharedPointer<UserToJson> userList)
          this->show();
          return;
     }
+    atemptsCounter = 0;
     this->hide();
     LoggedWindow* w = new LoggedWindow(ui->loginEdit->text(),userList,this);
     w->show();
